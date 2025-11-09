@@ -31,6 +31,12 @@ process_execute (const char *file_name)
   char *fn_copy;
   tid_t tid;
 
+  //for assn2
+  char *fn_copy_copy;  //파일 이름 부분만을 위한 변수
+  char *fn_save;       //파일 이름을 제외한 나머지 부분들을 위한 변수
+  char *filename;      //파일 이름
+  //for assn2 end
+
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
@@ -38,8 +44,16 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  //for assn2
+  fn_copy_copy = palloc_get_page(0);
+  strlcpy (fn_copy_copy, file_name, PGSIZE);
+  filename = strtok_r (fn_copy_copy, " ", &fn_save);
+  //for assn2 end
+
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  palloc_free_page (fn_copy_copy); //메모리 해제
+
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -54,17 +68,35 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
+  //for assn2
+  char *fn_copy;  //파일 이름 부분만을 위한 변수
+  char *fn_save;       //파일 이름을 제외한 나머지 부분들을 위한 변수
+  char *filename;      //파일 이름
+  fn_copy = palloc_get_page (0);
+  strlcpy (fn_copy, file_name, PGSIZE);
+  filename = strtok_r (fn_copy, " ", &fn_save);  //process_execute()에서처럼 파싱
+  //for assn2 end
+
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
+  success = load (filename, &if_.eip, &if_.esp);
+
+
+  if(success)
+  {
+    pass_argument (file_name, &if_.esp);  //argument를 push
+    thread_current() -> is_load = true; //load 성공 
+  }
+  //sema_up (&thread_current ()->load_sema); // load_sema를 up시켜 laod 완료 알림
+  palloc_free_page (fn_copy); // memory 
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
-    thread_exit ();
+    thread_exit (); // 이제 terminate message를 띄운다.
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -463,3 +495,65 @@ install_page (void *upage, void *kpage, bool writable)
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
 }
+
+ void
+ pass_argument (char *file_name, void **esp)
+ {
+  char *fn_copy;
+  char *fn_save;
+
+  char **argv = palloc_get_page (0);  
+  char **argv_addr = palloc_get_page (0);
+  char *argv_token;
+
+  int i;
+  int index = 0;
+  int len;
+
+  fn_copy = palloc_get_page (0);
+  strlcpy (fn_copy, file_name, PGSIZE);
+
+  argv_token = strtok_r (fn_copy, " ", &fn_save); // file 이름
+
+  argv[index] = argv_token;
+
+  //argument들 배열에 파싱하여 저장
+  while (argv_token != NULL)
+  {
+    argv_token = strtok_r (NULL, " ", &fn_save);
+    index++;
+    argv[index] = argv_token;
+  }
+
+  //역순으로 stack에 push한다. (R -> L)
+  for (i = index - 1; i >= 0; i--)
+  {
+    len = strlen (argv[i]) + 1;
+    *esp -= len;
+    strlcpy (*esp, argv[i], len);
+    argv_addr[i] = *esp; 
+  }
+
+   *esp -= ((uint32_t)(*esp)) % 4; // word-align
+   *esp -= 4;
+  *(uint32_t *)(*esp) = 0; // NULL pointer
+
+  // push한 argument들의 address들을 stack에 push  (R->L)
+  for (i = index - 1; i >= 0; i--)
+  {
+    *esp -= 4;
+    *(uint32_t *)(*esp) = (uint32_t)argv_addr[i];
+  }
+
+   *esp -= 4;
+  *(uint32_t *)(*esp) = (uint32_t)(*esp + 4); // argv 배열의 address
+
+  *esp -= 4;
+  *(uint32_t *)(*esp) = index; // argc
+
+  *esp -= 4;
+  *(uint32_t *)(*esp) = 0; // return address
+  palloc_free_page (argv);
+  palloc_free_page (argv_addr);
+  palloc_free_page (fn_copy);
+ }
