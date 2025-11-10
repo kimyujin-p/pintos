@@ -89,10 +89,11 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (filename, &if_.eip, &if_.esp);
 
+  struct thread *cur = thread_current ();
   //assn2 
   if(success)
   {
-    struct thread *cur = thread_current ();
+    
     // fd table 초기화
     cur->fd_table = palloc_get_page (PAL_ZERO);
     if (cur->fd_table == NULL)
@@ -104,10 +105,12 @@ start_process (void *file_name_)
 
     pass_argument (file_name, &if_.esp);  //argument를 push
     cur->is_load = true;
-
-    sema_up (&cur->load_sema);
   }
-  //sema_up (&thread_current ()->load_sema); // load_sema를 up시켜 laod 완료 알림
+  else
+  {
+    cur->is_load = false;
+  }
+  sema_up (&cur->load_sema);
   palloc_free_page (fn_copy); // memory 
 
   /* If load failed, quit. */
@@ -307,6 +310,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   t->current_file = file;
   file_deny_write (file);
   //assn2 end
+
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)

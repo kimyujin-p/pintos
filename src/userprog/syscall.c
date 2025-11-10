@@ -276,12 +276,14 @@
       lock_release (&file_lock);
       return -1;
     }
+    if (!strcmp (t->name, file))
+    file_deny_write (f);
 
     fd = t->fd_max;
     t->fd_table[fd] = f;
     t->fd_max++;
-    lock_release (&file_lock);
 
+    lock_release (&file_lock);
     return fd;
   }
 

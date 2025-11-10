@@ -111,6 +111,7 @@ struct thread
     struct file **fd_table; // 열린 파일들의 포인터 배열
     int fd_max;             // 현재까지 사용한 가장 큰 file descriptor 번호
     struct file *current_file; // 현재 실행 중인 실행파일
+
    //ass2 end
 
     /* Shared between thread.c and synch.c. */
