@@ -17,9 +17,13 @@
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
+#include "userprog/syscall.h"
+
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
+void pass_argument (char *file_name, void **esp);
+struct thread *get_child (tid_t pid);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -48,10 +52,11 @@ process_execute (const char *file_name)
   fn_copy_copy = palloc_get_page(0);
   strlcpy (fn_copy_copy, file_name, PGSIZE);
   filename = strtok_r (fn_copy_copy, " ", &fn_save);
-  //for assn2 end
+
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (filename, PRI_DEFAULT, start_process, fn_copy);
+  //for assn2 end
   palloc_free_page (fn_copy_copy); //메모리 해제
 
   if (tid == TID_ERROR)
@@ -84,11 +89,23 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (filename, &if_.eip, &if_.esp);
 
-
+  //assn2 
   if(success)
   {
+    struct thread *cur = thread_current ();
+    // fd table 초기화
+    cur->fd_table = palloc_get_page (PAL_ZERO);
+    if (cur->fd_table == NULL)
+      sys_exit (-1);        // 메모리 부족 시 종료
+
+    cur->fd_max = 2;        // 0: stdin, 1: stdout (예약만, 실제 파일 없음)
+    cur->fd_table[0] = NULL;
+    cur->fd_table[1] = NULL;
+
     pass_argument (file_name, &if_.esp);  //argument를 push
-    thread_current() -> is_load = true; //load 성공 
+    cur->is_load = true;
+
+    sema_up (&cur->load_sema);
   }
   //sema_up (&thread_current ()->load_sema); // load_sema를 up시켜 laod 완료 알림
   palloc_free_page (fn_copy); // memory 
@@ -96,7 +113,7 @@ start_process (void *file_name_)
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
-    thread_exit (); // 이제 terminate message를 띄운다.
+    sys_exit(-1); // 이제 terminate message를 띄운다.
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -117,12 +134,23 @@ start_process (void *file_name_)
 
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
+//for assn2
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  return -1;
+  int status;
+    struct thread *child = get_child (child_tid);
+    if (child == NULL)  //wait하려는 child가 존재하지 않으면 -1반환
+    {
+      return -1; 
+    }
+    sema_down (&child->wait_sema); //실질적인 waiting하는 부분
+    status = child->exit_status;
+    list_remove (&child->children_elem); // child 가 종료되었으므로 children_list에서 제거
+    sema_up (&child->exit_sema);  //child 의 exit를 알린다.
+    return status; // exit status 반환
 }
-
+//assn2 end
 /* Free the current process's resources. */
 void
 process_exit (void)
@@ -133,6 +161,21 @@ process_exit (void)
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
+
+  //assn2
+  int i;
+
+  for (i = 2; i < cur->fd_max; i++)
+  {
+    sys_close (i);
+  }
+  palloc_free_page (cur->fd_table);
+  if (cur->current_file != NULL)
+    {
+      file_allow_write (cur->current_file);  // 실행 파일에 대한 write 허용 복원
+      file_close (cur->current_file);
+    }
+  //assn2 end
   if (pd != NULL) 
     {
       /* Correct ordering here is crucial.  We must set
@@ -260,7 +303,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
       printf ("load: %s: open failed\n", file_name);
       goto done; 
     }
-
+  //assn2 
+  t->current_file = file;
+  file_deny_write (file);
+  //assn2 end
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
@@ -344,7 +390,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+  //file_close (file);
   return success;
 }
 

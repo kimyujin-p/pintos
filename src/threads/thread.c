@@ -181,6 +181,10 @@ thread_create (const char *name, int priority,
 
   /* Initialize thread. */
   init_thread (t, name, priority);
+  //for assn2  추가된 thread의 부모를 초기화해준다. 
+  t->parent = thread_current();
+  list_push_back(&t->parent->children_list, &t->children_elem);
+  //for assn2 end
   tid = t->tid = allocate_tid ();
 
   /* Stack frame for kernel_thread(). */
@@ -284,6 +288,21 @@ thread_exit (void)
 
 #ifdef USERPROG
   process_exit ();
+
+  struct thread *current_thread = thread_current();
+  struct thread *t;
+  struct list_elem *elem;
+
+  sema_up(&current_thread -> wait_sema);
+
+  for (elem = list_begin (&current_thread->children_list);
+       elem != list_end (&current_thread->children_list);
+       elem = list_next (elem))
+  {
+    t = list_entry (elem, struct thread, children_elem);
+    sema_up (&t->exit_sema);
+  }
+  sema_down (&current_thread->exit_sema);
 #endif
 
   /* Remove thread from all threads list, set our status to dying,
@@ -463,6 +482,23 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+
+  //for assn2   새로 추가된 변수들 초기화 
+  t->exit_status = 0;
+  t->is_load = false;
+
+  t->parent = NULL; 
+  list_init(&t->children_list);
+  sema_init(&t->wait_sema, 0);
+  sema_init(&t->exit_sema, 0);
+  sema_init(&t->load_sema, 0);
+
+  // fd 테이블 초기화 (파일 시스템용)
+  t->fd_table = NULL;
+  t->fd_max = 0;              // 0: stdin, 1: stdout 예약
+  t->current_file = NULL;
+
+  //for assn2 end
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

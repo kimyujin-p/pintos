@@ -4,7 +4,10 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+//for assn2
 #include "threads/synch.h"
+
+
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -80,6 +83,8 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
+struct file;
+
 struct thread
   {
     /* Owned by thread.c. */
@@ -90,14 +95,26 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
 
+   //assn2 
+    int exit_status;                    //for termination message 
+
+    bool is_load;                       //for argument parsing
+
+
+    struct thread *parent;             //parent thread
+    struct list children_list;          //children threads
+    struct list_elem children_elem;     //list node
+    struct semaphore wait_sema;         //parent waiting semaphore
+    struct semaphore exit_sema;         //child terminating semaphore
+    struct semaphore load_sema;         //load semaphore
+
+    struct file **fd_table; // 열린 파일들의 포인터 배열
+    int fd_max;             // 현재까지 사용한 가장 큰 file descriptor 번호
+    struct file *current_file; // 현재 실행 중인 실행파일
+   //ass2 end
+
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-    
-    //assn2 
-    int exit_status;                    //for termination message 
-    bool is_load;                       //for argument parsing
-    struct semaphore load_sema;          
-    //ass2 end
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
