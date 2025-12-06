@@ -477,7 +477,8 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
          and zero the final PAGE_ZERO_BYTES bytes. */
       size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
       size_t page_zero_bytes = PGSIZE - page_read_bytes;
-
+      
+      ////////////////////// 여기서 부터 
       /* Get a page of memory. */
       uint8_t *kpage = falloc_get_page (PAL_USER); ////// modified
       if (kpage == NULL)
@@ -497,11 +498,14 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
           falloc_free_page (kpage); ////// modified
           return false; 
         }
+      /////////////////////// 여기까지 삭제하고, spte 새로 만드는 코드 한줄 ㄱㄱ
 
       /* Advance. */
       read_bytes -= page_read_bytes;
       zero_bytes -= page_zero_bytes;
       upage += PGSIZE;
+      // 여기에 ofs += page_read_bytes;
+
     }
   return true;
 }
@@ -516,13 +520,13 @@ setup_stack (void **esp)
 
   kpage = falloc_get_page (PAL_USER | PAL_ZERO); ////// modified
   if (kpage != NULL) 
-    {
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-      if (success)
-        *esp = PHYS_BASE;
-      else
-        falloc_free_page (kpage); ////// modified
-    }
+  {
+    success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+    if (success) // 여기에서도 spte 생성 
+      *esp = PHYS_BASE;
+    else
+      falloc_free_page (kpage); ////// modified
+  }
   return success;
 }
 
