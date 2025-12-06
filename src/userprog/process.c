@@ -478,33 +478,12 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
       size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
       size_t page_zero_bytes = PGSIZE - page_read_bytes;
       
-      ////////////////////// 여기서 부터 
-      /* Get a page of memory. */
-      uint8_t *kpage = falloc_get_page (PAL_USER); ////// modified
-      if (kpage == NULL)
-        return false;
-
-      /* Load this page. */
-      if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
-        {
-          falloc_free_page (kpage); ////// modified
-          return false; 
-        }
-      memset (kpage + page_read_bytes, 0, page_zero_bytes);
-
-      /* Add the page to the process's address space. */
-      if (!install_page (upage, kpage, writable)) 
-        {
-          falloc_free_page (kpage); ////// modified
-          return false; 
-        }
-      /////////////////////// 여기까지 삭제하고, spte 새로 만드는 코드 한줄 ㄱㄱ
-
+      init_file_spte(&thread_current()->spt, upage, file, ofs, page_read_bytes, page_zero_bytes, writable);
       /* Advance. */
       read_bytes -= page_read_bytes;
       zero_bytes -= page_zero_bytes;
       upage += PGSIZE;
-      // 여기에 ofs += page_read_bytes;
+      ofs += page_read_bytes;
 
     }
   return true;
@@ -523,6 +502,7 @@ setup_stack (void **esp)
   {
     success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
     if (success) // 여기에서도 spte 생성 
+      init_frame_spte(&thread_current()->spt, PHYS_BASE - PGSIZE, kpage);
       *esp = PHYS_BASE;
     else
       falloc_free_page (kpage); ////// modified

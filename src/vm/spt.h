@@ -1,9 +1,12 @@
+#ifndef VM_SWAP_H__
+#define VM_SWAP_H__
+
 #include <hash.h>
 #include "filesys/file.h"
 #include "filesys/off_t.h"
 
 #define PAGE_ZERO 0
-#define PAGE_ANON 1
+#define PAGE_FRAME 1
 #define PAGE_FILE 2
 #define PAGE_SWAP 3
 
@@ -33,3 +36,5 @@ struct spte *init_file_spte (struct hash *, void *, struct file *, off_t, uint32
 bool load_page (struct hash *, void *);
 struct spte *get_spte (struct hash *, void *);
 void page_delete (struct hash *spt, struct spte *entry);
+
+#endif

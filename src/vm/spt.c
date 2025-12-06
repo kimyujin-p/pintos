@@ -22,7 +22,6 @@ destroy_spt (struct hash *spt)
 }
 
 
-
 void
 init_zero_spte (struct hash *spt, void *upage)
 {
@@ -41,7 +40,7 @@ init_zero_spte (struct hash *spt, void *upage)
 }
 
 void
-init_anon_spte (struct hash *spt, void *upage, void *kpage)
+init_frame_spte (struct hash *spt, void *upage, void *kpage)
 {
   struct spte *e;
   e = (struct spte *) malloc (sizeof *e);
@@ -49,7 +48,7 @@ init_anon_spte (struct hash *spt, void *upage, void *kpage)
   e->upage = upage;
   e->kpage = kpage;
   
-  e->status = PAGE_ANON;
+  e->status = PAGE_FRAME;
 
   e->file = NULL;
   e->writable = true;
