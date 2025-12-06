@@ -94,7 +94,7 @@ load_page (struct hash *spt, void *upage) // page fault handler 에서 사용
   if (kpage == NULL) /
     sys_exit (-1);
 
-  bool was_holding_lock = lock_held_by_current_thread (&file_lock);
+  bool was_holding_lock =  (&file_lock);
 
   switch (e->status)
   {

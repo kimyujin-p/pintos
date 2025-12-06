@@ -75,25 +75,29 @@ void evict_page() {
   struct frame *e = clock_cursor;
   struct spte *s;
 
-  /* BEGIN: Find page to evict */
-  do {
-    if (e != NULL) {
-      pagedir_set_accessed(e->t->pagedir, e->upage, false);
+  while (1) {
+    e = list_pop_front(frame_table);
+    if (!pagedir_is_accessed(e->t->pagedir, e->upage) || !pagedir_is_accessed(e->t->pagedir, e->kpage)) {
+        //list_push_back(frame_table, e);
+        break;
     }
+    else {
+        pagedir_set_accessed(e->t->pagedir, e->upage, false);
+        pagedir_set_accessed(e->t->pagedir, e->kpage, false);
+        list_push_back(frame_table, e);
+    }
+  }
 
-    if (clock_cursor == NULL || list_next(&clock_cursor->list_elem) == list_end(&frame_table)) {
-      e = list_entry(list_begin(&frame_table), struct frmae, list_elem);
-    } else {
-      e = list_next (e);
-    }
-  } while (!pagedir_is_accessed(e->t->pagedir, e->upage));
-  /*  END : Find page to evict */
 
   s = get_spte(&thread_current()->spt, e->upage);
   s->status = PAGE_SWAP;
-  s->swap_id = swap_out(e->kpage);
+  swap_out(s, e->kpage);
 
-  lock_release(&frame_lock); {
-    falloc_free_page(e->kpage);
-  } lock_acquire(&frame_lock);
+  palloc_free_page (e->kpage);
+  pagedir_clear_page (e->t->pagedir, e->upage);
+  free (e); /// frame 메모리 해제
+  
+//   lock_release(&frame_lock); {
+//     falloc_free_page(e->kpage);
+//   } lock_acquire(&frame_lock);
 }

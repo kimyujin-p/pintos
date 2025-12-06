@@ -50,6 +50,10 @@
     int syscall_num = *(int *)(f->esp);   //어떤 system call 인지 파악
     int argv[3];
 
+    // for project3 -> page fault handler에서 interrupt 발생 시점의 thread의 esp 획득에 필요.
+    // 만약 유저 모드였다면 f->esp 그대로 사용. 커널 모드였다면 thread_current()->esp를 사용해야함. 
+    thread_current()->esp = f->esp;
+
     switch (syscall_num) {
       case SYS_HALT:
         {
