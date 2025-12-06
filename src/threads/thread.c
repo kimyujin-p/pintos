@@ -187,6 +187,8 @@ thread_create (const char *name, int priority,
   //for assn2 end
   tid = t->tid = allocate_tid ();
 
+  init_spt(&t->spt);
+
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
   kf->eip = NULL;

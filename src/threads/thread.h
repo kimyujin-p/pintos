@@ -7,6 +7,9 @@
 //for assn2
 #include "threads/synch.h"
 
+#include "vm/spt.h"
+#include "swap.h"
+
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -113,6 +116,9 @@ struct thread
     struct file *current_file; // 현재 실행 중인 실행파일
 
    //ass2 end
+
+   // for project3 
+   struct spt spt; 
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
