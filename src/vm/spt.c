@@ -157,7 +157,7 @@ spt_hash_func (const struct hash_elem *elem, void *aux)
 {
   struct spte *p = hash_entry(elem, struct spte, hash_elem);
 
-  return hash_bytes (&p->upage, sizeof (p->kpage));
+  return hash_bytes (&p->upage, sizeof (p->upage));
 }
 
 static bool 
