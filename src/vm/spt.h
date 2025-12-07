@@ -1,5 +1,5 @@
-#ifndef VM_SWAP_H__
-#define VM_SWAP_H__
+#ifndef VM_SPT_H__
+#define VM_SPT_H__
 
 #include <hash.h>
 #include "filesys/file.h"
