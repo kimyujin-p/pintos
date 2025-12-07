@@ -9,6 +9,7 @@
 
 #include "vm/spt.h"
 #include "vm/swap.h"
+#include <hash.h>
 
 
 /* States in a thread's life cycle. */
@@ -118,7 +119,7 @@ struct thread
    //ass2 end
 
    // for project3 
-   struct spt spt; 
+   struct hash* spt; 
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
