@@ -510,11 +510,13 @@ setup_stack (void **esp)
   if (kpage != NULL) 
   {
     success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
-    if (success) // 여기에서도 spte 생성 
+    if (success) { // 여기에서도 spte 생성
       init_frame_spte(&thread_current()->spt, PHYS_BASE - PGSIZE, kpage);
       *esp = PHYS_BASE;
-    else
+    }
+    else{
       falloc_free_page (kpage); ////// modified
+    }
   }
   return success;
 }
