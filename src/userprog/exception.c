@@ -6,7 +6,7 @@
 #include "threads/thread.h"
 #include "userprog/syscall.h"
 #include "threads/vaddr.h"
-#include "vm/page.h"
+#include "vm/spt.h"
 #include "vm/swap.h"
 #include "threads/palloc.h"
 
