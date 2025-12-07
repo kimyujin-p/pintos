@@ -76,7 +76,7 @@ void evict_page() {
   struct spte *s;
 
   while (1) {
-    e = list_pop_front(frame_table);
+    e = list_pop_front(&frame_table);
     if (!pagedir_is_accessed(e->t->pagedir, e->upage) || !pagedir_is_accessed(e->t->pagedir, e->kpage)) {
         //list_push_back(frame_table, e);
         break;
@@ -84,7 +84,7 @@ void evict_page() {
     else {
         pagedir_set_accessed(e->t->pagedir, e->upage, false);
         pagedir_set_accessed(e->t->pagedir, e->kpage, false);
-        list_push_back(frame_table, e);
+        list_push_back(&frame_table, e);
     }
   }
 
