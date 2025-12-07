@@ -180,7 +180,7 @@ spte_destutcor (struct hash_elem *elem, void *aux)
 }
 
 void 
-page_delete (struct hash *spt, struct spte *entry)
+spte_delete (struct hash *spt, struct spte *entry)
 {
   hash_delete (spt, &entry->hash_elem);
   free (entry);
