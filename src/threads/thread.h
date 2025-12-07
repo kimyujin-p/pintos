@@ -8,7 +8,7 @@
 #include "threads/synch.h"
 
 #include "vm/spt.h"
-#include "swap.h"
+#include "vm/swap.h"
 
 
 /* States in a thread's life cycle. */
