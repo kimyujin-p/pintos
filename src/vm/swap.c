@@ -70,3 +70,22 @@ void swap_out (struct spte *spte, void *kpage)
 
   lock_release (&swap_lock);
 }
+
+void delete_in_swap_disk (int slot_index)
+{
+  lock_acquire (&swap_lock);
+
+  if (slot_index < 0 || slot_index >= bitmap_size (swap_bitmap)) {
+    lock_release (&swap_lock);
+    sys_exit(-1);
+  }
+
+  if(!bitmap_test (swap_bitmap, slot_index)) {
+    lock_release (&swap_lock);
+    sys_exit(-1);
+  }
+
+  bitmap_set (swap_bitmap, slot_index, false);
+
+  lock_release (&swap_lock);
+}

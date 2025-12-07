@@ -168,6 +168,15 @@ process_exit (void)
   //assn2
   int i;
 
+  // 먼저 munmap all mapped files
+  // spt를 순회하면서 모든 spte를 정리
+  // 만약 file과 관련된 page라면 써주기
+  // swap disk에 있다면 swap disk에서 정리해주기
+  // frame에 있다면 frame table에서 정리해주기
+  // + frame 해제
+  // spte 자체도 해제
+  destroy_spt(&cur->spt);
+  
   for (i = 2; i < cur->fd_max; i++)
   {
     sys_close (i);

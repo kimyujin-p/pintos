@@ -3,6 +3,7 @@
 #include "vm/frame.h"
 #include <string.h>
 #include "threads/vaddr.h"
+#include "vm/swap.h"
 
 static hash_hash_func spt_hash_func;
 static hash_less_func spt_less_func;
@@ -94,7 +95,7 @@ load_page (struct hash *spt, void *upage) // page fault handler 에서 사용
   if (kpage == NULL) /
     sys_exit (-1);
 
-  bool already_holding_lock = (&file_lock);
+  bool already_holding_lock = (file_lock.holder == thread_current());
 
   switch (e->status)
   {
@@ -175,6 +176,16 @@ spte_destutcor (struct hash_elem *elem, void *aux)
   struct spte *e;
 
   e = hash_entry (elem, struct spte, hash_elem);
+
+  if (e->status == PAGE_FRAME)
+  {
+    falloc_free_page (e->kpage); // frame 해제
+  }
+
+  else if (e->status == PAGE_SWAP)
+  {
+    delete_in_swap_disk(e->swap_id); // swap에서 페이지 제거
+  }
 
   free(e);
 }
