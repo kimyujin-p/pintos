@@ -94,7 +94,7 @@ load_page (struct hash *spt, void *upage) // page fault handler 에서 사용
   if (kpage == NULL) /
     sys_exit (-1);
 
-  bool was_holding_lock =  (&file_lock);
+  bool already_holding_lock = (&file_lock);
 
   switch (e->status)
   {
@@ -106,7 +106,7 @@ load_page (struct hash *spt, void *upage) // page fault handler 에서 사용
   
     break;
   case PAGE_FILE:
-    if (!was_holding_lock)
+    if (!already_holding_lock)
       lock_acquire (&file_lock);
     
     if (file_read_at (e->file, kpage, e->read_bytes, e->ofs) != e->read_bytes)
@@ -117,7 +117,7 @@ load_page (struct hash *spt, void *upage) // page fault handler 에서 사용
     }
     
     memset (kpage + e->read_bytes, 0, e->zero_bytes);
-    if (!was_holding_lock)
+    if (!already_holding_lock)
       lock_release (&file_lock);
 
     break;
