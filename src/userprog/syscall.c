@@ -17,6 +17,7 @@
 
   // for project3
   #include "vm/mmap.h"
+  #include "filesys/file.h"
 
   struct lock file_lock;
 
@@ -468,8 +469,8 @@
       return -1; // Failed to reopen file
     }
 
-    int file_length = file_length(reopened_file);
-    if (file_length == 0)
+    int length = file_length(reopened_file);
+    if (length == 0)
     {
       file_close(reopened_file);
       lock_release(&file_lock);
@@ -477,7 +478,7 @@
     }
 
     // Check for overlapping mappings in make_mmap_entry
-    int mappind_id = make_mmap_entry(reopened_file, addr, file_length);
+    int mappind_id = make_mmap_entry(reopened_file, addr, length);
     lock_release(&file_lock);
     return mappind_id;
   }

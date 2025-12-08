@@ -1,8 +1,9 @@
-#include "mmap.h"
+#include "vm/mmap.h"
 #include "threads/thread.h"
 #include "vm/spt.h"
 #include "filesys/file.h"
 #include "userprog/pagedir.h"
+#include "threads/vaddr.h"
 extern struct lock file_lock;
 
 void init_mmap_list (void)
@@ -58,7 +59,7 @@ mmap_entry* get_mmap_entry (int mapping_id)
 
     for (e = list_begin (mmap_list); e != list_end (mmap_list); e = list_next (e))
     {
-        mmap_entry *entry = list_entry (e, mmap_entry, elem);
+        mmap_entry *entry = list_entry (e, struct mmap_entry, elem);
         if (entry->mapping_id == mapping_id)
         {
             return entry;
@@ -71,22 +72,25 @@ void remove_mmap_entry (int mapping_id)
 {
     struct thread *cur = thread_current();
     struct hash *spt = &cur->spt;
-    void *upage = entry->upage;
-    struct file *file = entry->file;
+    void *upage;
+    struct file *file;
     struct mmap_entry *entry;
 
-    mmap_entry *entry = get_mmap_entry(mapping_id); 
+    entry = get_mmap_entry(mapping_id); 
     if (entry != NULL)
     {
       return; // Invalid mapping_id
     }
 
+    upage = entry->upage;
+    file = entry->file;
+
     off_t ofs = 0;
-    int file_length = file_length(file);
+    int length = file_length(file);
 
     lock_acquire (&file_lock);
 
-    for (int offset = 0; offset < file_length; offset += PGSIZE)
+    for (int offset = 0; offset < length; offset += PGSIZE)
     {
         void *page_upage = upage + offset;
         struct spte *spte = get_spte (spt, page_upage);

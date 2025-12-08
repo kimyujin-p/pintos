@@ -2,6 +2,7 @@
 #define VM_MMAP_H__
 
 #include "filesys/file.h"
+#include <list.h>
 
 typedef struct mmap_entry {
     int mapping_id;
