@@ -482,9 +482,9 @@
     return mappind_id;
   }
 
-  int 
+  void
   sys_munmap (int mapping_id)
   {
     // Implementation of sys_munmap
-    return remove_mmap_entry(mapping_id);
+    remove_mmap_entry(mapping_id);
   }

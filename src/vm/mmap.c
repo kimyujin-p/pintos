@@ -67,7 +67,7 @@ mmap_entry* get_mmap_entry (int mapping_id)
     return NULL; 
 }
 
-int remove_mmap_entry (int mapping_id)
+void remove_mmap_entry (int mapping_id)
 {
     struct thread *cur = thread_current();
     struct hash *spt = &cur->spt;
@@ -78,7 +78,7 @@ int remove_mmap_entry (int mapping_id)
     mmap_entry *entry = get_mmap_entry(mapping_id); 
     if (entry != NULL)
     {
-      return -1; // Invalid mapping_id
+      return; // Invalid mapping_id
     }
 
     off_t ofs = 0;
@@ -109,5 +109,5 @@ int remove_mmap_entry (int mapping_id)
 
     lock_release (&file_lock);
 
-    return 0; // Success
+    return; // Success
 }
