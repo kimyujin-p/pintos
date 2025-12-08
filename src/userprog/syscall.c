@@ -136,18 +136,18 @@
         sys_close ((int)argv[0]);
         break;
       }
-      case SYS_MMAP:
-      {
-        get_argument (f->esp, argv, 2);
-        f->eax = sys_mmap ((int) argv[0], (void *) argv[1]);
-        break;
-      }
-      case SYS_MUNMAP:
-      {
-        get_argument (f->esp, argv, 1);
-        sys_munmap ((int) argv[0]);
-        break;
-      }
+      // case SYS_MMAP:
+      // {
+      //   get_argument (f->esp, argv, 2);
+      //   f->eax = sys_mmap ((int) argv[0], (void *) argv[1]);
+      //   break;
+      // }
+      // case SYS_MUNMAP:
+      // {
+      //   get_argument (f->esp, argv, 1);
+      //   sys_munmap ((int) argv[0]);
+      //   break;
+      // }
       default:
         printf ("Unknown system call: %d\n", syscall_num);
         sys_exit(-1);
