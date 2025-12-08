@@ -82,7 +82,7 @@ void evict_page() {
     elem = list_pop_front(&frame_table);
     e = list_entry(elem, struct frame, list_elem);
 
-    if (!pagedir_is_accessed(e->t->pagedir, e->upage || !pagedir_is_accessed(e->t->pagedir, e->kpage))) {
+    if (!pagedir_is_accessed(e->t->pagedir, e->upage && !pagedir_is_accessed(e->t->pagedir, e->kpage))) {
         //list_push_back(frame_table, e);
         break;
     }
