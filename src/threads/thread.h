@@ -119,7 +119,7 @@ struct thread
    //ass2 end
 
    // for project3 
-   struct hash* spt;
+   struct hash spt;
    void *esp; 
 
     /* Shared between thread.c and synch.c. */

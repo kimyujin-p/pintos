@@ -1,13 +1,14 @@
 #include "vm/spt.h"
 #include "threads/thread.h"
 #include "vm/frame.h"
+#include "threads/palloc.h"
 #include <string.h>
 #include "threads/vaddr.h"
 #include "vm/swap.h"
 
 static hash_hash_func spt_hash_func;
 static hash_less_func spt_less_func;
-static void page_destutcor (struct hash_elem *elem, void *aux);
+static void spte_destrutcor (struct hash_elem *elem, void *aux);
 extern struct lock file_lock;
 
 void
@@ -19,7 +20,7 @@ init_spt (struct hash *spt)
 void
 destroy_spt (struct hash *spt)
 {
-  hash_destroy (spt, spte_destutcor);
+  hash_destroy (spt, spte_destrutcor);
 }
 
 
@@ -92,10 +93,10 @@ load_page (struct hash *spt, void *upage) // page fault handler 에서 사용
     sys_exit (-1);
 
   kpage = falloc_get_page (PAL_USER, upage);
-  if (kpage == NULL) /
+  if (kpage == NULL) 
     sys_exit (-1);
 
-  bool already_holding_lock = (file_lock.holder == thread_current());
+  bool already_holding_lock = (&file_lock != NULL) && lock_held_by_current_thread(&file_lock);
 
   switch (e->status)
   {
@@ -113,7 +114,8 @@ load_page (struct hash *spt, void *upage) // page fault handler 에서 사용
     if (file_read_at (e->file, kpage, e->read_bytes, e->ofs) != e->read_bytes)
     {
       falloc_free_page (kpage);
-      lock_release (&file_lock);
+      if (!already_holding_lock) // 좀 이상한듯 
+        lock_release (&file_lock);
       sys_exit (-1);
     }
     
@@ -171,7 +173,7 @@ spt_less_func (const struct hash_elem *a, const struct hash_elem *b, void *aux)
 }
 
 static void
-spte_destutcor (struct hash_elem *elem, void *aux)
+spte_destrutcor (struct hash_elem *elem, void *aux)
 {
   struct spte *e;
 

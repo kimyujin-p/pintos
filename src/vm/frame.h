@@ -1,5 +1,5 @@
-#ifndef VM_SWAP_H__
-#define VM_SWAP_H__
+#ifndef VM_FRAME_H__
+#define VM_FRAME_H__
 
 #include <list.h>
 #include "threads/palloc.h"

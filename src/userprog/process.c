@@ -404,6 +404,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   //file_close (file);
+  if (!success) file_close (file);
   return success;
 }
 
@@ -505,8 +506,9 @@ setup_stack (void **esp)
 {
   uint8_t *kpage;
   bool success = false;
+  void *upage = ((uint8_t *) PHYS_BASE) - PGSIZE;
 
-  kpage = falloc_get_page (PAL_USER | PAL_ZERO); ////// modified
+  kpage = falloc_get_page (PAL_USER | PAL_ZERO, upage); ////// modified
   if (kpage != NULL) 
   {
     success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);

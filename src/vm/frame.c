@@ -4,14 +4,12 @@
 
 static struct list frame_table;
 static struct lock frame_lock;
-static struct frame *clock_cursor;
 
 void
 frame_init ()
 {
   list_init (&frame_table);
   lock_init (&frame_lock);
-  clock_cursor = NULL;
 }
 
 void *
@@ -25,8 +23,10 @@ falloc_get_page(enum palloc_flags flags, void *upage)
   {
     evict_page();
     kpage = palloc_get_page (flags);
-    if (kpage == NULL)
+    if (kpage == NULL){
+      lock_release(&frame_lock);
       return NULL;
+    }
   }
   
   e = (struct frame *)malloc (sizeof *e); //// 실제 frame 들은 malloc으로 메모리 할당. 애초에 해당 메모리는 evict 되면 안되기 때문에, 따로 관리되어야 하는게 맞음.
@@ -46,8 +46,10 @@ falloc_free_page (void *kpage)
   struct frame *e;
   lock_acquire (&frame_lock);
   e = get_frame (kpage);
-  if (e == NULL)
+  if (e == NULL){
+    lock_release (&frame_lock);
     sys_exit (-1);
+  }
 
   list_remove (&e->list_elem);
   palloc_free_page (e->kpage);
@@ -72,12 +74,15 @@ get_frame (void* kpage)
 void evict_page() {
   ASSERT(lock_held_by_current_thread(&frame_lock));
 
-  struct frame *e = clock_cursor;
+  struct frame *e;
+  struct list_elem *elem;
   struct spte *s;
 
   while (1) {
-    e = list_pop_front(&frame_table);
-    if (!pagedir_is_accessed(e->t->pagedir, e->upage) || !pagedir_is_accessed(e->t->pagedir, e->kpage)) {
+    elem = list_pop_front(&frame_table);
+    e = list_entry(elem, struct frame, list_elem);
+
+    if (!pagedir_is_accessed(e->t->pagedir, e->upage || !pagedir_is_accessed(e->t->pagedir, e->kpage))) {
         //list_push_back(frame_table, e);
         break;
     }
@@ -89,7 +94,7 @@ void evict_page() {
   }
 
 
-  s = get_spte(&thread_current()->spt, e->upage);
+  s = get_spte(&e->t->spt, e->upage);
   s->status = PAGE_SWAP;
   swap_out(s, e->kpage);
 
