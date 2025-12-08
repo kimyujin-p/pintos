@@ -15,6 +15,9 @@
   #include "console.h"
   //for assn2 end
 
+  // for project3
+  #include "vm/mmap.h"
+
   struct lock file_lock;
 
   static void syscall_handler (struct intr_frame *);
@@ -35,6 +38,8 @@
   void sys_seek   (int fd, unsigned position);
   unsigned sys_tell (int fd);
   void sys_close  (int fd);
+  int sys_mmap (int fd, void *addr);
+  void sys_munmap (int mapping_id);
 
   void
   syscall_init (void) 
@@ -136,18 +141,18 @@
         sys_close ((int)argv[0]);
         break;
       }
-      // case SYS_MMAP:
-      // {
-      //   get_argument (f->esp, argv, 2);
-      //   f->eax = sys_mmap ((int) argv[0], (void *) argv[1]);
-      //   break;
-      // }
-      // case SYS_MUNMAP:
-      // {
-      //   get_argument (f->esp, argv, 1);
-      //   sys_munmap ((int) argv[0]);
-      //   break;
-      // }
+      case SYS_MMAP:
+      {
+        get_argument (f->esp, argv, 2);
+        f->eax = sys_mmap ((int) argv[0], (void *) argv[1]);
+        break;
+      }
+      case SYS_MUNMAP:
+      {
+        get_argument (f->esp, argv, 1);
+        sys_munmap ((int) argv[0]);
+        break;
+      }
       default:
         printf ("Unknown system call: %d\n", syscall_num);
         sys_exit(-1);
@@ -433,4 +438,53 @@
       t->fd_table[fd] = NULL;
     }
     lock_release (&file_lock);
+  }
+
+  int
+  sys_mmap (int fd, void *addr)
+  {
+    // Implementation of sys_mmap
+    // ...
+    struct thread *t = thread_current();
+    struct file *f;
+    struct file *reopened_file;
+
+    if (fd <= 1 || fd >= t->fd_max || addr == NULL || pg_ofs(addr) != 0)
+    {
+      return -1; // Invalid fd or addr not page-aligned
+    }
+
+    f = t->fd_table[fd];
+    if (f == NULL)
+    {
+      return -1; // File descriptor not valid
+    }
+
+    lock_acquire(&file_lock);
+    reopened_file = file_reopen(f);
+    if (reopened_file == NULL)
+    {
+      lock_release(&file_lock);
+      return -1; // Failed to reopen file
+    }
+
+    file_leghth = file_length(reopened_file);
+    if (file_length == 0)
+    {
+      file_close(reopened_file);
+      lock_release(&file_lock);
+      return -1; // File length is zero
+    }
+
+    // Check for overlapping mappings in make_mmap_entry
+    int mappind_id = make_mmap_entry(reopened_file, addr, file_length);
+    lock_release(&file_lock);
+    return mappind_id;
+  }
+
+  int 
+  sys_munmap (int mapping_id)
+  {
+    // Implementation of sys_munmap
+    return remove_mmap_entry(mmapping_id);
   }

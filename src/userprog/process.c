@@ -175,6 +175,11 @@ process_exit (void)
   // frame에 있다면 frame table에서 정리해주기
   // + frame 해제
   // spte 자체도 해제
+  for (i = 0; i < cur->next_mapping_id; i++)
+  {
+    sys_munmap(i);  //모든 mapping된 파일들에 대해 munmap 수행
+  }
+
   destroy_spt(&cur->spt);
   
   for (i = 2; i < cur->fd_max; i++)

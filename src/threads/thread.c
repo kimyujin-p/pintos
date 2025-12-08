@@ -187,8 +187,6 @@ thread_create (const char *name, int priority,
   //for assn2 end
   tid = t->tid = allocate_tid ();
 
-  init_spt(&t->spt);
-
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
   kf->eip = NULL;
@@ -501,6 +499,13 @@ init_thread (struct thread *t, const char *name, int priority)
   t->current_file = NULL;
 
   //for assn2 end
+
+  // for poject3
+  init_spt(&t->spt);
+  
+  t->next_mapping_id = 1; // mapping id는 1부터 시작
+  list_init(&t->mmap_list);
+  // for project3 end
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

@@ -121,6 +121,9 @@ struct thread
    // for project3 
    struct hash spt;
    void *esp; 
+   int next_mapping_id; // mmaping 할 때마다 증가시키는 id -> mmap할 때 사용
+   struct list mmap_list; // mmap_entry들의 리스트
+   // for project3 end
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
