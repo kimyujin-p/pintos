@@ -468,7 +468,7 @@
       return -1; // Failed to reopen file
     }
 
-    file_leghth = file_length(reopened_file);
+    int file_length = file_length(reopened_file);
     if (file_length == 0)
     {
       file_close(reopened_file);
